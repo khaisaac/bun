@@ -8,6 +8,13 @@
       "when": 1774498276756,
       "tag": "0000_previous_grey_gargoyle",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1774499543161,
+      "tag": "0001_strange_warbird",
+      "breakpoints": true
     }
   ]
 }

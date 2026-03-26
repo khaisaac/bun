@@ -1,5 +1,10 @@
 import { Elysia } from "elysia";
-import { DuplicateEmailError, registerUser } from "../services/users-service";
+import {
+  DuplicateEmailError,
+  InvalidCredentialsError,
+  registerUser,
+  loginUser,
+} from "../services/users-service";
 
 type RegisterBody = {
   name?: unknown;
@@ -7,7 +12,14 @@ type RegisterBody = {
   password?: unknown;
 };
 
-function isValidRegisterBody(body: RegisterBody): body is { name: string; email: string; password: string } {
+type LoginBody = {
+  email?: unknown;
+  password?: unknown;
+};
+
+function isValidRegisterBody(
+  body: RegisterBody,
+): body is { name: string; email: string; password: string } {
   return (
     typeof body.name === "string" &&
     body.name.trim().length > 0 &&
@@ -18,26 +30,60 @@ function isValidRegisterBody(body: RegisterBody): body is { name: string; email:
   );
 }
 
-export const usersRoute = new Elysia().post("/api/users", async ({ body, set }) => {
-  const payload = body as RegisterBody;
+function isValidLoginBody(
+  body: LoginBody,
+): body is { email: string; password: string } {
+  return (
+    typeof body.email === "string" &&
+    body.email.trim().length > 0 &&
+    typeof body.password === "string" &&
+    body.password.length > 0
+  );
+}
 
-  if (!isValidRegisterBody(payload)) {
-    set.status = 400;
-    return { error: "invalid request body" };
-  }
+export const usersRoute = new Elysia()
+  .post("/api/users", async ({ body, set }) => {
+    const payload = body as RegisterBody;
 
-  try {
-    return await registerUser({
-      name: payload.name,
-      email: payload.email,
-      password: payload.password,
-    });
-  } catch (error) {
-    if (error instanceof DuplicateEmailError) {
+    if (!isValidRegisterBody(payload)) {
       set.status = 400;
-      return { error: "email sudah terdaftar" };
+      return { error: "invalid request body" };
     }
 
-    throw error;
-  }
-});
+    try {
+      return await registerUser({
+        name: payload.name,
+        email: payload.email,
+        password: payload.password,
+      });
+    } catch (error) {
+      if (error instanceof DuplicateEmailError) {
+        set.status = 400;
+        return { error: "email sudah terdaftar" };
+      }
+
+      throw error;
+    }
+  })
+  .post("/api/users/login", async ({ body, set }) => {
+    const payload = body as LoginBody;
+
+    if (!isValidLoginBody(payload)) {
+      set.status = 400;
+      return { error: "invalid request body" };
+    }
+
+    try {
+      return await loginUser({
+        email: payload.email,
+        password: payload.password,
+      });
+    } catch (error) {
+      if (error instanceof InvalidCredentialsError) {
+        set.status = 400;
+        return { error: "email atau password salah" };
+      }
+
+      throw error;
+    }
+  });
